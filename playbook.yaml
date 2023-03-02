@@ -1,0 +1,26 @@
+- name: Perform common server setup
+  hosts: all
+  tasks:
+
+  - name: Uninstall Docker and Amazon Cloud Watch Agent
+    ansible.builtin.apt:
+      name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+      - docker-ce-rootless-extras
+      - amazon-cloudwatch-agent
+      state: absent
+      purge: true
+    become: true
+  
+  # - name: Uninstall Amazon Cloud Watch Agent
+  #   ansible.builtin.apt:
+  #     name:
+  #     - amazon-cloudwatch-agent
+  #     state: absent
+  #     purge: true
+  #   become: true
+  
