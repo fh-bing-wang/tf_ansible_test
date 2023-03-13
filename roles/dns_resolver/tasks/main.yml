@@ -1,0 +1,8 @@
+- name: Config systemd-resolved
+  ansible.builtin.lineinfile:
+    path: /etc/systemd/resolved.conf
+    regexp: "^#?DNS="
+    line: "DNS={{ dns_address }}"
+  become: true
+  notify:
+  - Reload and restart systemd-resolved

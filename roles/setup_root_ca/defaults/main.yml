@@ -1,0 +1,2 @@
+ca_certificate_url: "https://vault-cluster.private.vault.fe631a8c-532c-4ac9-8abd-3f0f83ecd72d.aws.hashicorp.cloud:8200/v1/admin/jp/pki-root/ca/pem"
+install_ca_to_system_store: true

@@ -1,0 +1,7 @@
+node-ip: '0.0.0.0,::'
+cluster-cidr: 172.168.128.0/26,2406:da14:7c9:9f02:ffff:ffff::/112
+service-cidr: 172.168.128.64/26,2406:da14:7c9:9f02:ffff:ffff:1::/112
+flannel-ipv6-masq: true
+kube-controller-manager-arg:
+- --node-cidr-mask-size-ipv4=26
+- --node-cidr-mask-size-ipv6=112

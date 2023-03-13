@@ -1,0 +1,34 @@
+- name: Install NAS packages
+  ansible.builtin.apt:
+    name:
+    - cifs-utils
+    - python3-hvac # needed by community.hashi_vault modules
+    - python3-boto3 # needed by community.hashi_vault modules
+  become: true
+
+- name: Read NAS credentials
+  community.hashi_vault.vault_kv2_get:
+    auth_method: "{{ vault_auth_method }}"
+    url: "{{ vault_addr }}"
+    namespace: "{{ vault_namespace }}"
+    role_id: "{{ vault_role_id }}"
+    path: hospital-nas/staging
+  register: nas_credentials
+
+- name: Copy NAS credentials
+  ansible.builtin.copy:
+    dest: /etc/nas-cifs-credentials
+    content: |
+      username={{ nas_credentials.secret.username }}
+      password={{ nas_credentials.secret.password }}
+    mode: 0400
+  become: true
+
+- name: Mount NAS share
+  ansible.posix.mount:
+    path: /mnt/sambashare
+    src: //{{ nas_address }}/sambashare
+    fstype: cifs
+    opts: nofail,credentials=/etc/nas-cifs-credentials,file_mode=0666,dir_mode=0777
+    state: mounted
+  become: true

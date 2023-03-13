@@ -1,0 +1,50 @@
+- name: Create backup directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+  become: true
+  loop:
+  - /mnt/sambashare/postgres-backup
+  - /var/backups/postgresql
+
+- name: Create symbolic link to backup directory
+  ansible.builtin.file:
+    src: /mnt/sambashare/postgres-backup
+    path: /var/backups/postgresql/14-main
+    state: link
+  become: true
+
+- name: Create PostgreSQL systemd override directories
+  ansible.builtin.file:
+    path: "/etc/systemd/system/{{ item }}"
+    state: directory
+  become: true
+  loop:
+  - pg_dump@14-main.timer.d
+  - pg_dump@14-main.service.d
+
+- name: Create PostgreSQL backup systemd timer override
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/pg_dump@14-main.timer.d/10-calender.conf
+    content: |
+      [Unit]
+      Description=Daily Dump of PostgreSQL Cluster %i
+
+      [Timer]
+      OnCalendar=*-*-* 3:00
+  become: true
+
+- name: Create PostgreSQL backup systemd service override
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/pg_dump@14-main.service.d/10-environment.conf
+    content: |
+      [Service]
+      Environment="KEEP=7"
+  become: true
+
+- name: Enable and start backup timer
+  ansible.builtin.systemd:
+    name: pg_dump@14-main.timer
+    enabled: true
+    state: started
+  become: true

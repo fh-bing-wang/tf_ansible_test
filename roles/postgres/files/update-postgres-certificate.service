@@ -1,0 +1,16 @@
+[Unit]
+Description=Update PostgreSQL certificate
+After=network.target
+
+# retry at most 10 times within 10 min
+StartLimitIntervalSec=600
+StartLimitBurst=10
+
+[Service]
+ExecStart=/usr/local/bin/update-postgres-certificate
+User=postgres
+Group=postgres
+
+# when a failure happens, sleep for 30s and then retry
+Restart=on-failure
+RestartSec=30

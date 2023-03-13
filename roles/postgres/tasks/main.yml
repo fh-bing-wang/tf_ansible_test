@@ -1,0 +1,47 @@
+- name: Install PostgreSQL
+  ansible.builtin.apt:
+    name:
+    - postgresql-14=14.5-0ubuntu0.22.04.1
+    - python3-psycopg2 # needed by community.postgresql modules
+    - python3-hvac # needed by community.hashi_vault modules
+    - python3-boto3 # needed by community.hashi_vault modules
+  become: true
+
+- name: Install PostgreSQL certificate update tools
+  ansible.builtin.import_tasks: certificate.yml
+
+- name: Copy postgresql.conf
+  ansible.builtin.copy:
+    src: postgresql.conf
+    dest: /etc/postgresql/14/main/postgresql.conf
+    owner: postgres
+    group: postgres
+    mode: 0644
+  become: true
+  notify: Restart PostgreSQL
+
+- name: Copy other PostgreSQL config files
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/etc/postgresql/14/main/{{ item }}"
+    owner: postgres
+    group: postgres
+    mode: 0600
+  loop:
+  - pg_hba.conf
+  - pg_ident.conf
+  become: true
+  notify: Restart PostgreSQL
+
+- name: Copy Fluent Bit config for PostgreSQL
+  ansible.builtin.copy:
+    src: fluentbit_log_postgresql.conf
+    dest: /etc/fluent-bit/log_postgresql.conf
+  become: true
+  notify: Restart Fluent Bit
+
+- name: Configure PostgreSQL backup
+  ansible.builtin.import_tasks: backup.yml
+
+- name: Configure PostgreSQL users and database schema
+  ansible.builtin.import_tasks: db_objects.yml

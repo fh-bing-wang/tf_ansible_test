@@ -1,0 +1,35 @@
+- name: Add Fluent Bit APT key
+  ansible.builtin.get_url:
+    url: https://packages.fluentbit.io/fluentbit.key
+    dest: /etc/apt/keyrings/fluentbit.asc
+  become: true
+
+- name: Add Fluent Bit APT repository
+  ansible.builtin.apt_repository:
+    repo: deb [signed-by=/etc/apt/keyrings/fluentbit.asc] https://packages.fluentbit.io/ubuntu/jammy jammy main
+  become: true
+ 
+# - name: Install Fluent Bit
+#   ansible.builtin.apt:
+#     name: fluent-bit
+#   become: true
+
+# - name: Copy Fluent Bit config files
+#   ansible.builtin.copy:
+#     src: files/
+#     dest: /etc/fluent-bit/
+#   become: true
+
+# - name: Create run directory for Fluent Bit
+#   ansible.builtin.file:
+#     path: /run/fluent-bit
+#     state: directory
+#   become: true
+#   notify: Restart Fluent Bit
+
+# - name: Start and enable Fluent Bit
+#   ansible.builtin.systemd:
+#     name: fluent-bit.service
+#     enabled: true
+#     state: started
+#   become: true

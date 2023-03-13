@@ -1,0 +1,11 @@
+- name: Restart PostgreSQL
+  ansible.builtin.systemd:
+    name: postgresql@14-main.service
+    state: restarted
+  become: true
+
+- name: Restart Fluent Bit
+  ansible.builtin.systemd:
+    name: fluent-bit.service
+    state: restarted
+  become: true

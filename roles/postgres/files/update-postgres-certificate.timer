@@ -1,0 +1,12 @@
+[Unit]
+Description=Update PostgreSQL certificate biweekly
+
+[Timer]
+OnCalendar=*-*-01,14
+RandomizedDelaySec=1h
+FixedRandomDelay=true
+# store the last run time on disk, so that the timer is fired when a last run is skipped during machine power-off
+Persistent=true
+
+[Install]
+WantedBy=postgresql@14-main.service

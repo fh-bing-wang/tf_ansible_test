@@ -1,0 +1,5 @@
+- name: Update CA certificates
+  ansible.builtin.command:
+    cmd: /usr/sbin/update-ca-certificates
+  become: true
+  when: install_ca_to_system_store

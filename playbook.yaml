@@ -1,20 +1,31 @@
 - name: Perform common server setup
   hosts: all
   tasks:
+  # - ansible.builtin.include_role:
+  #     name: test-role
 
-  - name: Uninstall Docker and Amazon Cloud Watch Agent
-    ansible.builtin.apt:
-      name:
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
-      - docker-buildx-plugin
-      - docker-compose-plugin
-      - docker-ce-rootless-extras
-      - amazon-cloudwatch-agent
-      state: absent
-      purge: true
-    become: true
+  # - name: Uninstall Docker and Amazon Cloud Watch Agent
+  #   ansible.builtin.apt:
+  #     name:
+  #     - docker-ce
+  #     - docker-ce-cli
+  #     - containerd.io
+  #     - docker-buildx-plugin
+  #     - docker-compose-plugin
+  #     - docker-ce-rootless-extras
+  #     - amazon-cloudwatch-agent
+  #     state: absent
+  #     purge: true
+  #   become: true
+  
+  # - name: Set up fluent bit
+  #   ansible.builtin.include_role:
+  #     name: fluent_bit
+  
+  - name: Perform depersonalization server setup
+    ansible.builtin.include_role:
+      name: k3s
+
   
   # - name: Uninstall Amazon Cloud Watch Agent
   #   ansible.builtin.apt:

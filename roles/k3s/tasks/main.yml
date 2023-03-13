@@ -1,0 +1,93 @@
+- name: Install dependencies
+  ansible.builtin.apt:
+    name:
+    - python3-boto3 # needed by amazon.aws modules
+  become: true
+
+- name: Download k3s binary
+  ansible.builtin.get_url:
+    url: https://github.com/k3s-io/k3s/releases/download/v1.24.6%2Bk3s1/k3s
+    dest: /usr/local/bin/k3s
+    checksum: "sha256:https://github.com/k3s-io/k3s/releases/download/v1.24.6%2Bk3s1/sha256sum-amd64.txt"
+    mode: 0755
+  become: true
+
+- name: Create k3s command symlinks
+  ansible.builtin.file:
+    src: /usr/local/bin/k3s
+    path: /usr/local/bin/{{ item }}
+    state: link
+  become: true
+  loop:
+  - kubectl
+  - crictl
+  - ctr
+
+- name: Install k3s service
+  ansible.builtin.copy:
+    src: k3s.service
+    dest: /etc/systemd/system/k3s.service
+  become: true
+
+- name: Create k3s directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    recurse: true
+  become: true
+  loop:
+  - /etc/rancher/k3s
+  - /var/lib/rancher/credentialprovider/bin
+  - /var/lib/rancher/k3s/server/manifests
+
+- name: Copy k3s server config
+  ansible.builtin.copy:
+    src: server-config.yaml
+    dest: /etc/rancher/k3s/config.yaml
+  become: true
+
+- name: Install ECR credential provider
+  amazon.aws.aws_s3:
+    # TODO: currently the credential provider binary is hosted on S3. what's a better place to host it?
+    mode: get
+    bucket: flatironhealth-049608597516-binaries
+    object: ecr-credential-provider/ecr-credential-provider
+    dest: /var/lib/rancher/credentialprovider/bin/ecr-credential-provider
+    overwrite: different
+    dualstack: true
+  become: true
+
+- name: Ensure ECR credential provider is executable
+  ansible.builtin.file:
+    path: /var/lib/rancher/credentialprovider/bin/ecr-credential-provider
+    owner: root
+    group: root
+    mode: 0755
+  become: true
+
+- name: Copy k3s credential provider config
+  ansible.builtin.copy:
+    src: credential-provider-config.yaml
+    dest: /var/lib/rancher/credentialprovider/config.yaml
+  become: true
+
+- name: Copy k3s manifests
+  ansible.builtin.copy:
+    src: fluentbit-serviceaccount.yaml
+    dest: /var/lib/rancher/k3s/server/manifests/fluentbit-serviceaccount.yaml
+  become: true
+
+- name: Enable and start k3s service
+  ansible.builtin.systemd:
+    name: k3s
+    daemon_reload: true
+    enabled: true
+    state: started
+  become: true
+
+- name: Copy Fluent Bit config for k3s
+  ansible.builtin.copy:
+    src: fluentbit_log_k3s.conf
+    dest: /etc/fluent-bit/log_k3s.conf
+  become: true
+  notify: Restart Fluent Bit

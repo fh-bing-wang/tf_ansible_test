@@ -1,0 +1,53 @@
+- name: Read Postgres passwords
+  community.hashi_vault.vault_kv2_get:
+    auth_method: "{{ vault_auth_method }}"
+    url: "{{ vault_addr }}"
+    namespace: "{{ vault_namespace }}"
+    role_id: "{{ vault_role_id }}"
+    path: outpost-postgres/staging
+  register: postgres_passwords
+
+- block:
+  - name: Create depersonalization user in Postgres
+    community.postgresql.postgresql_user:
+      name: depersonalization
+      password: "{{ postgres_passwords.secret.depersonalization }}"
+
+  - name: Create source schema
+    community.postgresql.postgresql_schema:
+      name: source
+
+  - name: Create depersonalized schema
+    community.postgresql.postgresql_schema:
+      name: depersonalized
+      owner: depersonalization
+
+  - name: Create flatiron schema
+    community.postgresql.postgresql_schema:
+      name: flatiron
+      owner: depersonalization
+
+  - name: Create admin user in Postgres (staging only)
+    community.postgresql.postgresql_user:
+      name: admin
+      password: "{{ postgres_passwords.secret.admin }}"
+      role_attr_flags: SUPERUSER
+
+  - name: Grant schema permissions for depersonalization user
+    community.postgresql.postgresql_privs:
+      database: postgres
+      roles: depersonalization
+      objs: source
+      type: schema
+      privs: USAGE
+
+  - name: Grant table permissions for depersonalization user
+    community.postgresql.postgresql_privs:
+      database: postgres
+      roles: depersonalization
+      objs: ALL_IN_SCHEMA
+      schema: source
+      privs: SELECT
+
+  become: true
+  become_user: postgres

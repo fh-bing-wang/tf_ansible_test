@@ -1,0 +1,21 @@
+- name: Install unbound
+  ansible.builtin.apt:
+    name: unbound
+    update_cache: true
+  become: true
+
+- name: Copy unbound configs
+  ansible.builtin.copy:
+    src: files/
+    dest: /etc/unbound/unbound.conf.d/
+  become: true
+  notify:
+  - Restart unbound
+
+- name: Remove dnssec setting
+  ansible.builtin.file:
+    path: /etc/unbound/unbound.conf.d/root-auto-trust-anchor-file.conf
+    state: absent
+  become: true
+  notify:
+  - Restart unbound

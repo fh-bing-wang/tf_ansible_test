@@ -1,0 +1,12 @@
+- name: Restart unbound
+  ansible.builtin.systemd:
+    name: unbound
+    state: restarted
+  become: true
+
+- name: Reload and restart systemd-resolved
+  ansible.builtin.systemd:
+    name: systemd-resolved
+    daemon_reload: true
+    state: restarted
+  become: true

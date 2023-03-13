@@ -1,0 +1,30 @@
+#!/bin/bash
+
+export VAULT_ADDR=https://vault-cluster.private.vault.fe631a8c-532c-4ac9-8abd-3f0f83ecd72d.aws.hashicorp.cloud:8200
+export VAULT_NAMESPACE=admin/jp
+
+export VAULT_TOKEN=$(vault login -no-store -token-only -method=aws role=staging-outpost-postgres-role)
+
+if [[ "$?" -ne 0 ]]; then
+    echo "$0: Failed to login to Vault"
+    exit 1
+fi
+
+certificate_json=$(vault write -format=json \
+    pki/issue/outpost-postgres.staging \
+    common_name=outpost-postgres.staging.flatiron.co.jp \
+    ttl=14d)
+
+if [[ "$?" -ne 0 ]]; then
+    echo "$0: Failed to issue a certificate"
+    exit 1
+fi
+
+key_path=/var/lib/postgresql/14/main/server.key
+certificate_path=/var/lib/postgresql/14/main/server.crt
+
+jq -r '[.data.certificate] + .data.ca_chain | join("\n")' <<< $certificate_json > "$certificate_path"
+jq -r '.data.private_key' <<< $certificate_json > "$key_path"
+chmod 600 "$key_path"
+
+pg_ctlcluster 14 main reload || true # ignore error during reload. so that we don't ask for another certificate

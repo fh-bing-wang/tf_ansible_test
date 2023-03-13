@@ -1,0 +1,7 @@
+- name: Download Flatiron CA
+  ansible.builtin.get_url:
+    url: "{{ ca_certificate_url }}"
+    dest: /usr/local/share/ca-certificates/Flatiron_Root_CA.crt
+    force: true
+  become: true
+  notify: Update CA certificates

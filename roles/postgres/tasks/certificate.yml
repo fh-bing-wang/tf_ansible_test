@@ -1,0 +1,44 @@
+- name: Install PostgreSQL certificate update script
+  ansible.builtin.copy:
+    src: update-postgres-certificate
+    dest: /usr/local/bin/update-postgres-certificate
+    mode: 0755
+  become: true
+
+- name: Install PostgreSQL certificate update systemd units
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/etc/systemd/system/{{ item }}"
+  become: true
+  register: update_postgres_certificate_systemd_result
+  loop:
+  - update-postgres-certificate.service
+  - update-postgres-certificate.timer
+
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+  become: true
+  when: update_postgres_certificate_systemd_result.changed
+
+- name: Enable and start PostgreSQL certificate update systemd timer
+  ansible.builtin.systemd:
+    name: update-postgres-certificate.timer
+    state: started
+    enabled: true
+  become: true
+
+- name: Check if a certificate already exists or not
+  ansible.builtin.stat:
+    path: /var/lib/postgresql/14/main/server.crt
+    get_attributes: false
+    get_checksum: false
+  become: true
+  register: postgres_certificate_result
+
+- name: Generate a certificate for PostgreSQL if it doesn't exist yet
+  ansible.builtin.systemd:
+    name: update-postgres-certificate.service
+    state: restarted
+  become: true
+  when: not postgres_certificate_result.stat.exists
